@@ -10,6 +10,7 @@ import os
 import threading
 import subprocess
 import requests
+from fast
 from pathlib import Path
 
 class VoiceMeetSumApp:
@@ -19,39 +20,39 @@ class VoiceMeetSumApp:
         self.root.geometry("800x600")
         self.root.resizable(True, True)
         
-        # Configuration
-        self.config_file = "config.json"
-        self.api_key = ""
-        self.selected_file = None
-        self.transcription_text = ""
+        # # Configuration
+        # self.config_file = "config.json"
+        # self.api_key = ""
+        # self.selected_file = None
+        # self.transcription_text = ""
         
-        # Load saved API key if exists
-        self.load_config()
+        # # Load saved API key if exists
+        # self.load_config()
         
-        # Setup GUI
-        self.setup_gui()
+        # # Setup GUI
+        # self.setup_gui()
         
-        # Handle window close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # # Handle window close event
+        # self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     
-    def load_config(self):
-        """Load API key from config.json if it exists"""
-        if os.path.exists(self.config_file):
-            try:
-                with open(self.config_file, 'r') as f:
-                    config = json.load(f)
-                    self.api_key = config.get('api_key', '')
-            except Exception as e:
-                print(f"Error loading config: {e}")
+    # def load_config(self):
+    #     """Load API key from config.json if it exists"""
+    #     if os.path.exists(self.config_file):
+    #         try:
+    #             with open(self.config_file, 'r') as f:
+    #                 config = json.load(f)
+    #                 self.api_key = config.get('api_key', '')
+    #         except Exception as e:
+    #             print(f"Error loading config: {e}")
     
-    def save_config(self):
-        """Save API key to config.json"""
-        try:
-            config = {'api_key': self.api_key}
-            with open(self.config_file, 'w') as f:
-                json.dump(config, f, indent=4)
-        except Exception as e:
-            print(f"Error saving config: {e}")
+    # def save_config(self):
+    #     """Save API key to config.json"""
+    #     try:
+    #         config = {'api_key': self.api_key}
+    #         with open(self.config_file, 'w') as f:
+    #             json.dump(config, f, indent=4)
+    #     except Exception as e:
+    #         print(f"Error saving config: {e}")
     
     def setup_gui(self):
         """Setup the GUI components"""
@@ -65,12 +66,12 @@ class VoiceMeetSumApp:
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(3, weight=1)
         
-        # API Key section
-        ttk.Label(main_frame, text="OpenAI API Key:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.api_key_entry = ttk.Entry(main_frame, width=50, show="*")
-        self.api_key_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
-        if self.api_key:
-            self.api_key_entry.insert(0, self.api_key)
+        # # API Key section
+        # ttk.Label(main_frame, text="OpenAI API Key:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        # self.api_key_entry = ttk.Entry(main_frame, width=50, show="*")
+        # self.api_key_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        # if self.api_key:
+        #     self.api_key_entry.insert(0, self.api_key)
         
         # File selection section
         ttk.Label(main_frame, text="Video/Audio File:").grid(row=1, column=0, sticky=tk.W, pady=5)
@@ -136,34 +137,34 @@ class VoiceMeetSumApp:
         self.status_label.config(text=message)
         self.root.update()
     
-    def validate_api_key(self):
-        """Validate OpenAI API key by calling the models endpoint"""
-        api_key = self.api_key_entry.get().strip()
-        if not api_key:
-            messagebox.showerror("Error", "Please enter your OpenAI API key")
-            return False
+    # def validate_api_key(self):
+    #     """Validate OpenAI API key by calling the models endpoint"""
+    #     api_key = self.api_key_entry.get().strip()
+    #     if not api_key:
+    #         messagebox.showerror("Error", "Please enter your OpenAI API key")
+    #         return False
         
-        self.update_status("Validating API key...")
-        self.log_output("Validating API key...\n")
+    #     self.update_status("Validating API key...")
+    #     self.log_output("Validating API key...\n")
         
-        try:
-            headers = {
-                "Authorization": f"Bearer {api_key}"
-            }
-            response = requests.get("https://api.openai.com/v1/models", headers=headers, timeout=10)
+    #     try:
+    #         headers = {
+    #             "Authorization": f"Bearer {api_key}"
+    #         }
+    #         response = requests.get("https://api.openai.com/v1/models", headers=headers, timeout=10)
             
-            if response.status_code == 200:
-                self.log_output("API key validated successfully!\n\n")
-                self.api_key = api_key
-                return True
-            else:
-                messagebox.showerror("Error", f"Invalid API key. Status code: {response.status_code}")
-                self.log_output(f"API key validation failed: {response.status_code}\n")
-                return False
-        except requests.exceptions.RequestException as e:
-            messagebox.showerror("Error", f"Network error: {str(e)}")
-            self.log_output(f"Network error: {str(e)}\n")
-            return False
+    #         if response.status_code == 200:
+    #             self.log_output("API key validated successfully!\n\n")
+    #             self.api_key = api_key
+    #             return True
+    #         else:
+    #             messagebox.showerror("Error", f"Invalid API key. Status code: {response.status_code}")
+    #             self.log_output(f"API key validation failed: {response.status_code}\n")
+    #             return False
+    #     except requests.exceptions.RequestException as e:
+    #         messagebox.showerror("Error", f"Network error: {str(e)}")
+    #         self.log_output(f"Network error: {str(e)}\n")
+    #         return False
     
     def check_ffmpeg(self):
         """Check if FFmpeg is installed"""
@@ -331,13 +332,13 @@ class VoiceMeetSumApp:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save file: {str(e)}")
     
-    def on_closing(self):
-        """Handle window close event"""
-        if self.api_key:
-            result = messagebox.askyesno("Save API Key", "Do you want to save your API key for next time?")
-            if result:
-                self.save_config()
-        self.root.destroy()
+    # def on_closing(self):
+    #     """Handle window close event"""
+    #     if self.api_key:
+    #         result = messagebox.askyesno("Save API Key", "Do you want to save your API key for next time?")
+    #         if result:
+    #             self.save_config()
+    #     self.root.destroy()
 
 
 def main():

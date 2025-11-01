@@ -1,4 +1,4 @@
-# Meeting Transcription App - Project Structure (Production Ready)
+# Voicemeet_sum- Project Structure (Production Ready)
 
 ## 📁 GitHub Repository Structure
 
@@ -87,7 +87,7 @@ meeting-transcription-app/
 @echo off
 chcp 65001 > nul
 echo ╔════════════════════════════════════════════════╗
-echo ║   Meeting Transcription App - Setup          ║
+echo ║   Voicemeet_sum - Setup          ║
 echo ║   Cài đặt tự động - Vui lòng đợi...          ║
 echo ╚════════════════════════════════════════════════╝
 echo.
@@ -209,7 +209,7 @@ include_metadata = true
 ## 📝 README.md (Vietnamese)
 
 ```markdown
-# Meeting Transcription App
+# Voicemeet_sum
 
 Ứng dụng chuyển đổi audio cuộc họp thành văn bản và tóm tắt tự động.
 

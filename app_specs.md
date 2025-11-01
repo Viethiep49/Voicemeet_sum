@@ -1,4 +1,4 @@
-# Meeting Transcription App - Technical Specifications
+# Voicemeet_sum - Technical Specifications
 
 ## 🖥️ Target System
 

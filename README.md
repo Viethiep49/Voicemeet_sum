@@ -215,11 +215,5 @@ MIT License - see [LICENSE](LICENSE)
 Contributions welcome! Please open an issue or PR.
 
 ## 📧 Contact
-
-- Issues: https://github.com/your-username/voicemeet_sum/issues
-- Email: your-email@example.com
-
----
-
-Made with ❤️ for efficient meeting transcription
-
+- Issues: https://github.com/Viethiep49/voicemeet_sum/issues
+- Email: truongviethiep49@gmail.com

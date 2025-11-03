@@ -2,7 +2,7 @@
 Faster-Whisper transcription service
 """
 from pathlib import Path
-from typing import Iterator, Optional, Callable
+from typing import Optional, Callable
 import time
 
 from faster_whisper import WhisperModel
@@ -78,14 +78,29 @@ class WhisperService:
                 str(audio_path),
                 beam_size=self.config.beam_size,
                 language=self.config.language,
+                task="transcribe",
                 vad_filter=self.config.vad_filter,
+                vad_parameters=dict(
+                    threshold=0.5,
+                    min_speech_duration_ms=250,
+                    min_silence_duration_ms=2000,
+                    speech_pad_ms=400
+                ),
                 initial_prompt=self.config.initial_prompt,
-                word_timestamps=False
+                word_timestamps=False,
+                condition_on_previous_text=True,
+                compression_ratio_threshold=2.4,
+                log_prob_threshold=-1.0,
+                no_speech_threshold=0.6,
+                language_detection_threshold=0.5,
+                language_detection_segments=1
             )
             
             logger.info(f"Detected language: {info.language} (probability: {info.language_probability:.2f})")
+            logger.info(f"Audio duration: {info.duration:.2f}s")
             
             # Process segments
+            last_update = 0
             for idx, segment in enumerate(segments_iter):
                 segments.append({
                     'start': segment.start,
@@ -93,28 +108,35 @@ class WhisperService:
                     'text': segment.text.strip()
                 })
                 
-                # Progress callback
-                if progress_callback:
-                    # Estimate progress based on segment times
-                    # This is approximate since we don't know total duration upfront
-                    if info.duration:
-                        estimated_progress = min(80.0, (segment.end / info.duration) * 80.0)
-                        progress_callback(estimated_progress, f"Đang xử lý... ({len(segments)} đoạn)")
+                # Progress callback (update every 5 seconds of audio)
+                if progress_callback and info.duration:
+                    current_time = segment.end
+                    if current_time - last_update >= 5.0 or idx == 0:
+                        estimated_progress = min(75.0, (current_time / info.duration) * 75.0)
+                        elapsed = time.time() - start_time
+                        speed = current_time / elapsed if elapsed > 0 else 0
+                        progress_callback(
+                            10 + estimated_progress,  # 10-85% range
+                            f"Transcribing... {current_time/60:.1f}/{info.duration/60:.1f} min (speed: {speed:.1f}x)"
+                        )
+                        last_update = current_time
             
             # Combine segments
             full_text = self._combine_segments(segments)
             
             transcribe_time = time.time() - start_time
             logger.info(f"Transcription completed in {transcribe_time:.2f}s")
+            logger.info(f"Total segments: {len(segments)}")
+            logger.info(f"Speed: {info.duration/transcribe_time:.1f}x realtime")
             
             if progress_callback:
-                progress_callback(80.0, "Hoàn thành transcription")
+                progress_callback(85.0, "Transcription completed")
             
             return full_text
             
         except Exception as e:
             logger.error(f"Transcription failed: {e}")
-            raise RuntimeError(f"Transcription thất bại: {e}")
+            raise RuntimeError(f"Transcription failed: {e}")
     
     def _combine_segments(self, segments: list) -> str:
         """
@@ -147,5 +169,18 @@ class WhisperService:
         """Unload model from memory to free resources"""
         if self.model is not None:
             logger.info("Unloading model")
+            del self.model
             self.model = None
-
+            
+            # Force garbage collection
+            import gc
+            gc.collect()
+            
+            # Clear CUDA cache if using GPU
+            if self.config.device == "cuda":
+                try:
+                    import torch
+                    torch.cuda.empty_cache()
+                    logger.info("CUDA cache cleared")
+                except:
+                    pass

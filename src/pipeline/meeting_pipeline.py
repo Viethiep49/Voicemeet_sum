@@ -57,13 +57,13 @@ class MeetingPipeline:
         try:
             # Step 1: Preprocess audio
             if progress_callback:
-                progress_callback(5, "Đang chuẩn bị audio...")
+                progress_callback(5, "Preparing audio...")
             
             logger.info("Step 1/3: Preprocessing audio")
             preprocessed_path = self.audio_processor.preprocess(audio_file)
             
             if progress_callback:
-                progress_callback(10, "Đang chuyển đổi speech sang text...")
+                progress_callback(10, "Converting speech to text...")
             
             # Step 2: Transcribe
             logger.info("Step 2/3: Transcribing")
@@ -76,7 +76,7 @@ class MeetingPipeline:
             transcript = clean_text(transcript)
             
             if progress_callback:
-                progress_callback(80, "Đang tạo tóm tắt...")
+                progress_callback(80, "Generating summary...")
             
             # Step 3: Summarize
             logger.info("Step 3/3: Summarizing")
@@ -90,7 +90,7 @@ class MeetingPipeline:
             transcript_path, summary_path = self._save_outputs(audio_file.stem, transcript, summary)
             
             if progress_callback:
-                progress_callback(100, "Hoàn thành!")
+                progress_callback(100, "Completed!")
             
             # Cleanup
             if remove_temp:

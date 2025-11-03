@@ -93,23 +93,12 @@ def clean_temp_files(temp_dir: Path, keep_files: Optional[List[Path]] = None):
         elif item.is_dir():
             shutil.rmtree(item, ignore_errors=True)
 
-def generate_output_filename(
-    base_name: str,
-    suffix: str = "",
-    extension: str = "txt"
-) -> str:
-    """
-    Generate output filename with timestamp
+def generate_output_filename(base_name: str, suffix: str = "", extension: str = "txt") -> str:
+    # Rút gọn base_name nếu quá dài
+    if len(base_name) > 30:
+        base_name = base_name[:30]
     
-    Args:
-        base_name: Base filename
-        suffix: Optional suffix
-        extension: File extension
-        
-    Returns:
-        Generated filename
-    """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")  # Bỏ seconds
     suffix_part = f"_{suffix}" if suffix else ""
     return f"{base_name}_{timestamp}{suffix_part}.{extension}"
 

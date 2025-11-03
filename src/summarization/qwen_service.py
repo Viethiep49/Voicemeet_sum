@@ -45,7 +45,7 @@ class QwenService:
         # Check if Ollama is available
         if not self._check_ollama():
             logger.error("Ollama is not running")
-            raise RuntimeError("Ollama chưa được khởi động. Vui lòng chạy: ollama serve")
+            raise RuntimeError("Ollama not running. Please start: ollama serve")
         
         # Check if model is available
         self._ensure_model_exists()
@@ -61,7 +61,7 @@ class QwenService:
             for i, chunk in enumerate(chunks):
                 if progress_callback:
                     progress = 80 + (i / len(chunks)) * 15
-                    progress_callback(progress, f"Đang tóm tắt... ({i+1}/{len(chunks)})")
+                    progress_callback(progress, f"Summarizing... ({i+1}/{len(chunks)})")
                 
                 chunk_summary = self._summarize_chunk(chunk)
                 chunk_summaries.append(chunk_summary)
@@ -69,19 +69,19 @@ class QwenService:
             # Combine and summarize again
             combined = "\n".join(chunk_summaries)
             if progress_callback:
-                progress_callback(95, "Đang hoàn thiện tóm tắt...")
+                progress_callback(95, "Finalizing summary...")
             
             final_summary = self._summarize_final(combined)
         else:
             if progress_callback:
-                progress_callback(85, "Đang tóm tắt...")
+                progress_callback(85, "Summarizing...")
             final_summary = self._summarize_complete(transcript)
         
         summarize_time = time.time() - start_time
         logger.info(f"Summarization completed in {summarize_time:.2f}s")
         
         if progress_callback:
-            progress_callback(100, "Hoàn thành!")
+            progress_callback(100, "Completed!")
         
         return final_summary
     
@@ -128,41 +128,30 @@ class QwenService:
         return response
     
     def _build_summary_prompt(self, text: str, style: str = "complete") -> str:
-        """
-        Build prompt for summarization
-        
-        Args:
-            text: Input text
-            style: Prompt style (complete, chunk, final)
-            
-        Returns:
-            Formatted prompt
-        """
-        base_instruction = """
-Bạn là trợ lý chuyên nghiệp tóm tắt cuộc họp. Hãy tóm tắt cuộc họp bằng tiếng Việt theo cấu trúc sau:
+        """Build prompt for summarization"""
+        base_instruction = """Bạn là trợ lý chuyên nghiệp tóm tắt cuộc họp. Đây là cuộc họp của công ty F&B (thực phẩm) tại Nhật Bản.
+
+Hãy tóm tắt theo cấu trúc sau (bằng tiếng Việt):
 
 # TÓM TẮT CUỘC HỌP
 
 ## NỘI DUNG CHÍNH
-[Tóm tắt ngắn gọn 3-5 điểm chính của cuộc họp]
+[Tóm tắt 3-5 điểm chính: vấn đề gì được bàn, ai nói gì]
 
 ## CÁC QUYẾT ĐỊNH
-[Liệt kê các quyết định quan trọng được đưa ra, nếu có]
+[Quyết định cụ thể nào được đưa ra? Số liệu? Timeline?]
 
 ## HÀNH ĐỘNG CẦN LÀM
-[Liệt kê các công việc cần làm tiếp theo với deadline hoặc người chịu trách nhiệm, nếu có]
+[Ai làm gì, deadline khi nào - format: "- Người: Công việc (deadline)"]
 
-Chỉ trả về nội dung tóm tắt, không thêm lời giải thích khác.
-"""
+Chỉ trả về nội dung tóm tắt, không giải thích thêm."""
         
         if style == "complete":
-            prompt = f"{base_instruction}\n\nNội dung cuộc họp:\n{text}"
+            return f"{base_instruction}\n\nNội dung cuộc họp:\n{text}"
         elif style == "chunk":
-            prompt = f"Tóm tắt ngắn gọn đoạn họp sau:\n\n{text}"
+            return f"Tóm tắt ngắn gọn đoạn họp sau:\n\n{text}"
         else:  # final
-            prompt = f"{base_instruction}\n\nCác tóm tắt phụ:\n{text}"
-        
-        return prompt
+            return f"{base_instruction}\n\nCác tóm tắt phụ:\n{text}"
     
     def _call_ollama(self, prompt: str) -> str:
         """
@@ -195,7 +184,7 @@ Chỉ trả về nội dung tóm tắt, không thêm lời giải thích khác.
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Ollama API error: {e}")
-            raise RuntimeError(f"Lỗi khi gọi Ollama: {e}")
+            raise RuntimeError(f"Ollama API error: {e}")
     
     def _check_ollama(self) -> bool:
         """
@@ -248,5 +237,5 @@ Chỉ trả về nội dung tóm tắt, không thêm lời giải thích khác.
             logger.info("Model downloaded successfully")
         except Exception as e:
             logger.error(f"Failed to pull model: {e}")
-            raise RuntimeError(f"Không thể tải model: {e}")
+            raise RuntimeError(f"Failed to pull model: {e}")
 

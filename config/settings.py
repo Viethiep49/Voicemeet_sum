@@ -15,7 +15,7 @@ class TranscriptionConfig:
     language: str = "vi"
     beam_size: int = 5
     vad_filter: bool = True
-    initial_prompt: str = "Cuộc họp công ty F&B, có từ tiếng Nhật về thực phẩm như phở"
+    initial_prompt: str = "Cuộc họp công ty F&B bằng tiếng Việt, có từ tiếng Nhật về thực phẩm như phở, bún, hàng."
 
 @dataclass
 class SummarizationConfig:

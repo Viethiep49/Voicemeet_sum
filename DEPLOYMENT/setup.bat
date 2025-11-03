@@ -50,7 +50,8 @@ if errorlevel 1 (
     exit /b 1
 )
 echo ✅ Dependencies đã được cài đặt
-
+echo [5/7] Kiểm tra GPU...
+python -c "import torch; print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Không có')"
 REM Check FFmpeg
 echo [5/6] Kiểm tra FFmpeg...
 ffmpeg -version > nul 2>&1

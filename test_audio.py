@@ -58,15 +58,27 @@ def main():
         print(f"[SUMMARY] {summary_path}")
         print()
         
-        # Show preview
-        print("[PREVIEW] TRANSCRIPT:")
-        print("-" * 60)
-        print(transcript_path.read_text(encoding='utf-8')[:500] + "...")
-        print()
-        
-        print("[PREVIEW] SUMMARY:")
-        print("-" * 60)
-        print(summary_path.read_text(encoding='utf-8')[:500] + "...")
+        # Show preview (skip if encoding error)
+        try:
+            print("\n[PREVIEW] TRANSCRIPT:")
+            print("-" * 60)
+            transcript_text = transcript_path.read_text(encoding='utf-8')[:500]
+            # Try to print, if fails just show file path
+            try:
+                print(transcript_text + "...")
+            except UnicodeEncodeError:
+                print(f"[Preview skipped - encoding issue, check file: {transcript_path}]")
+            print()
+            
+            print("[PREVIEW] SUMMARY:")
+            print("-" * 60)
+            summary_text = summary_path.read_text(encoding='utf-8')[:500]
+            try:
+                print(summary_text + "...")
+            except UnicodeEncodeError:
+                print(f"[Preview skipped - encoding issue, check file: {summary_path}]")
+        except Exception as e:
+            print(f"[Preview error: {e}]")
         
     except Exception as e:
         logger.error(f"Processing failed: {e}", exc_info=True)

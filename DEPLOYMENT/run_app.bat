@@ -31,7 +31,14 @@ echo ║   🎤 Voicemeet_sum - Starting...              ║
 echo ╚════════════════════════════════════════════════╝
 echo.
 
-python app\gui.py
+REM Launch app (stderr redirected to suppress cuDNN warnings)
+python app\gui.py 2>nul
+if errorlevel 1 (
+    echo.
+    echo App co the bi loi. Xem logs trong thu muc logs\
+    echo Hoac chay: python test_crash.py de xem chi tiet
+    pause
+)
 
 echo.
 echo App đã đóng. Nhấn phím bất kỳ để thoát...

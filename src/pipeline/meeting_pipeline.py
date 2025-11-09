@@ -67,10 +67,15 @@ class MeetingPipeline:
             
             # Step 2: Transcribe
             logger.info("Step 2/3: Transcribing")
-            transcript = self.whisper_service.transcribe(
-                preprocessed_path,
-                progress_callback=progress_callback
-            )
+            try:
+                transcript = self.whisper_service.transcribe(
+                    preprocessed_path,
+                    progress_callback=progress_callback
+                )
+            except Exception as e:
+                logger.error(f"Transcription error: {e}", exc_info=True)
+                # Try to continue with empty transcript or re-raise
+                raise RuntimeError(f"Transcription failed: {e}") from e
             
             # Clean transcript
             transcript = clean_text(transcript)
@@ -105,12 +110,21 @@ class MeetingPipeline:
             
             return transcript_path, summary_path
             
+        except KeyboardInterrupt:
+            logger.warning("Pipeline interrupted by user")
+            raise
+        except MemoryError as e:
+            logger.error(f"Out of memory: {e}")
+            raise RuntimeError("Out of memory. Please close other applications and try again.") from e
         except Exception as e:
-            logger.error(f"Pipeline failed: {e}")
+            logger.error(f"Pipeline failed: {e}", exc_info=True)
             raise
         finally:
-            # Unload Whisper model to free memory
-            self.whisper_service.unload_model()
+            # Always unload Whisper model to free memory
+            try:
+                self.whisper_service.unload_model()
+            except Exception as e:
+                logger.warning(f"Error unloading model: {e}")
     
     def _save_outputs(
         self,

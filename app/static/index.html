@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 Voicemeet_sum by Hiep</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 150, 255, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 255, 150, 0.1) 0px, transparent 50%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 255, 255, 0.01) 2px,
+                    rgba(255, 255, 255, 0.01) 4px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(20, 20, 25, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            animation: fadeIn 0.6s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .upload-zone:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .upload-zone:hover::before {
+            left: 100%;
+        }
+
+        .upload-zone.dragover {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .upload-icon {
+            font-size: 5em;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.5));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .upload-text {
+            font-size: 1.3em;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .upload-hint {
+            color: #666;
+            font-size: 0.95em;
+            font-weight: 300;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .file-info.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .file-size {
+            color: #888;
+            font-size: 0.9em;
+            font-weight: 300;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:hover:not(:disabled)::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.5);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: #333;
+            color: #666;
+            box-shadow: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-container.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.5em;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .step-icon::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .step.active .step-icon {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .step.active .step-icon::after {
+            opacity: 1;
+        }
+
+        .step.completed .step-icon {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .step-label {
+            font-size: 0.95em;
+            color: #666;
+            font-weight: 400;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-label {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .step.completed .step-label {
+            color: #00ff88;
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            height: 40px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-bar-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff 0%, #00ff88 100%);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: 700;
+            font-size: 0.95em;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .status-message {
+            text-align: center;
+            color: #aaa;
+            font-size: 1em;
+            margin-bottom: 25px;
+            min-height: 24px;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .download-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .download-btn {
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 255, 136, 0.2) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.3) 0%, rgba(0, 255, 136, 0.3) 100%);
+            border-color: #00d4ff;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+            color: #00ff88;
+        }
+
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .error-message {
+            background: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            color: #ff6b6b;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: none;
+            animation: shake 0.5s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2.2em;
+            }
+
+            .upload-zone {
+                padding: 40px 25px;
+            }
+
+            .steps {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .steps::before {
+                display: none;
+            }
+
+            .download-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voicemeet_sum by Hiepne</h1>
+        <p class="subtitle">Nội dung và bản tóm tắt cuộc họp</p>
+
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Kéo thả file audio vào đây</div>
+            <div class="upload-hint">hoặc click để chọn file (M4A, MP3, MP4, WAV, FLAC)</div>
+            <input type="file" id="fileInput" accept=".m4a,.mp3,.mp4,.wav,.flac">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <button id="processBtn" disabled>Bắt đầu xử lý</button>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="steps">
+                <div class="step" id="step1">
+                    <div class="step-icon">📝</div>
+                    <div class="step-label">Tiền xử lý</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-icon">🎤</div>
+                    <div class="step-label">Chuyển đổi</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-icon">📋</div>
+                    <div class="step-label">Tóm tắt</div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="download-buttons">
+                <a href="#" class="download-btn" id="downloadTranscript">
+                    📄 Tải Transcript
+                </a>
+                <a href="#" class="download-btn" id="downloadSummary">
+                    📋 Tải Tóm tắt
+                </a>
+            </div>
+            <button class="reset-btn" id="resetBtn">Xử lý file khác</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let currentJobId = null;
+        let statusPollInterval = null;
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const processBtn = document.getElementById('processBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const statusMessage = document.getElementById('statusMessage');
+        const results = document.getElementById('results');
+        const downloadTranscript = document.getElementById('downloadTranscript');
+        const downloadSummary = document.getElementById('downloadSummary');
+        const resetBtn = document.getElementById('resetBtn');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const step3 = document.getElementById('step3');
+
+        // Upload zone click
+        uploadZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            // Validate file type
+            const validExtensions = ['.m4a', '.mp3', '.mp4', '.wav', '.flac'];
+            const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!validExtensions.includes(fileExt)) {
+                showError(`Định dạng file không được hỗ trợ. Hỗ trợ: ${validExtensions.join(', ')}`);
+                return;
+            }
+
+            // Validate file size (2GB)
+            const maxSize = 2 * 1024 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showError(`File quá lớn (${formatFileSize(file.size)}). Tối đa: ${formatFileSize(maxSize)}`);
+                return;
+            }
+
+            if (file.size === 0) {
+                showError('File rỗng');
+                return;
+            }
+
+            // Show file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('show');
+            processBtn.disabled = false;
+            hideError();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        // Process button
+        processBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            processBtn.disabled = true;
+            hideError();
+            progressContainer.classList.add('show');
+            results.classList.remove('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || data.error || 'Upload thất bại');
+                }
+
+                currentJobId = data.job_id;
+                startPolling();
+            } catch (error) {
+                showError(error.message);
+                processBtn.disabled = false;
+                progressContainer.classList.remove('show');
+            }
+        });
+
+        function startPolling() {
+            if (statusPollInterval) {
+                clearInterval(statusPollInterval);
+            }
+
+            statusPollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/status/${currentJobId}`);
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.detail || data.error || 'Lỗi khi lấy trạng thái');
+                    }
+
+                    const job = data.job;
+                    updateProgress(job);
+
+                    if (job.status === 'completed' || job.status === 'failed') {
+                        clearInterval(statusPollInterval);
+                        statusPollInterval = null;
+
+                        if (job.status === 'completed') {
+                            showResults();
+                        } else {
+                            showError(job.message || 'Xử lý thất bại');
+                            processBtn.disabled = false;
+                        }
+                    }
+                } catch (error) {
+                    clearInterval(statusPollInterval);
+                    statusPollInterval = null;
+                    showError(error.message);
+                    processBtn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        function updateProgress(job) {
+            const progress = job.progress || 0;
+            progressBar.style.width = progress + '%';
+            progressBar.textContent = progress.toFixed(1) + '%';
+            statusMessage.textContent = job.message || 'Đang xử lý...';
+
+            // Update steps
+            if (progress < 10) {
+                step1.classList.add('active');
+                step2.classList.remove('active', 'completed');
+                step3.classList.remove('active', 'completed');
+            } else if (progress < 85) {
+                step1.classList.remove('active');
+                step1.classList.add('completed');
+                step2.classList.add('active');
+                step3.classList.remove('active', 'completed');
+            } else {
+                step1.classList.remove('active');
+                step1.classList.add('completed');
+                step2.classList.remove('active');
+                step2.classList.add('completed');
+                step3.classList.add('active');
+            }
+        }
+
+        function showResults() {
+            results.classList.add('show');
+            downloadTranscript.href = `${API_BASE}/download/${currentJobId}/transcript`;
+            downloadSummary.href = `${API_BASE}/download/${currentJobId}/summary`;
+        }
+
+        // Reset button
+        resetBtn.addEventListener('click', () => {
+            currentJobId = null;
+            if (statusPollInterval) {
+                clearInterval(statusPollInterval);
+                statusPollInterval = null;
+            }
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            progressContainer.classList.remove('show');
+            results.classList.remove('show');
+            processBtn.disabled = true;
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            statusMessage.textContent = '';
+            step1.classList.remove('active', 'completed');
+            step2.classList.remove('active', 'completed');
+            step3.classList.remove('active', 'completed');
+            hideError();
+        });
+    </script>
+</body>
+</html>
+

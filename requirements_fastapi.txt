@@ -1,0 +1,37 @@
+# ============================================
+# FastAPI Backend Dependencies
+# ============================================
+# File: requirements_fastapi.txt
+# Mô tả: Dependencies cho FastAPI backend thay thế Gradio GUI
+# ============================================
+
+# --- FastAPI Backend Core ---
+fastapi>=0.104.0              # Modern web framework for building APIs
+uvicorn[standard]>=0.24.0    # ASGI server with standard extras (for production)
+python-multipart>=0.0.6      # Required for file uploads in FastAPI
+
+# --- Existing Core Dependencies (keep these) ---
+faster-whisper>=0.10.0       # Transcription engine (faster implementation of Whisper)
+ollama>=0.1.0                # Local LLM runtime (for Qwen summarization)
+torch>=2.0.0                 # PyTorch (for CUDA support)
+numpy>=1.24.0                # Required by whisper and other ML libraries
+requests>=2.31.0             # For HTTP requests (Ollama API, health checks)
+python-dotenv>=1.0.0         # Environment variable management
+colorama>=0.4.6              # Colored terminal output
+tqdm>=4.65.0                 # Progress bars for pipelines
+
+# --- Optional but Recommended ---
+aiofiles>=23.2.1             # For async file operations (better performance)
+
+# ============================================
+# IMPORTANT NOTES:
+# ============================================
+# 1. Gradio đã được loại bỏ (không còn cần thiết)
+# 2. PyTorch với CUDA nên cài riêng:
+#    pip install torch==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+#    Hoặc cho RTX 40 series:
+#    pip install torch==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121
+# 3. Tất cả dependencies từ src/ được giữ nguyên
+# 4. Cài đặt: pip install -r requirements_fastapi.txt
+# ============================================
+

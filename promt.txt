@@ -1,0 +1,245 @@
+Prompt 1: Setup FastAPI Backend Structure
+Create a FastAPI backend for the existing Voicemeet_sum project to replace Gradio GUI.
+
+CONTEXT:
+- Existing pipeline in src/pipeline/meeting_pipeline.py works perfectly (tested with test_audio.py)
+- Pipeline supports 2-hour audio files without issues
+- Gradio crashes with long audio due to connection timeouts
+- Need async backend that handles long-running tasks properly
+
+REQUIREMENTS:
+1. FastAPI backend with background task processing
+2. Job queue system with in-memory storage
+3. Support existing pipeline without modifications
+4. REST API endpoints for upload, status polling, and download
+5. CORS enabled for local HTML frontend
+
+CREATE FILE: app/backend.py
+
+Key features:
+- POST /api/upload - Accept audio files, return job_id immediately
+- GET /api/status/{job_id} - Return real-time progress (0-100%)
+- GET /api/download/{job_id}/{type} - Download transcript or summary
+- GET /api/health - Check Ollama and system status
+- BackgroundTasks for async processing
+- Progress updates from pipeline callback
+- Global jobs dict: {job_id: {status, progress, message, transcript, summary}}
+
+INTEGRATION WITH EXISTING CODE:
+- Import MeetingPipeline from src.pipeline.meeting_pipeline
+- Use existing progress_callback pattern
+- Reuse config from config.settings
+- Save to existing output/ directory
+- Use existing logger from src.utils.logger
+
+TECH STACK:
+- FastAPI + Uvicorn
+- Python multipart for file uploads
+- Requests for Ollama check
+- No database needed (in-memory jobs dict)
+
+ERROR HANDLING:
+- Validate file types (M4A, MP3, MP4, WAV, FLAC)
+- Check file size (max 2GB)
+- Handle Ollama not running
+- Clean up temp files on completion/failure
+
+Include proper logging, CORS middleware, and comprehensive error messages in Vietnamese.
+
+
+Prompt 2: Create Modern HTML Frontend
+Create a beautiful single-page HTML frontend for the audio transcription service.
+
+CREATE FILE: app/static/index.html
+
+DESIGN REQUIREMENTS:
+1. Modern gradient UI (purple #667eea to #764ba2)
+2. Drag & drop file upload zone
+3. Real-time progress bar with percentage
+4. Step-by-step progress visualization:
+   - Step 1: Preprocessing (5-10%)
+   - Step 2: Transcription (10-85%)
+   - Step 3: Summarization (85-100%)
+5. Download buttons for results
+6. Error handling with user-friendly messages in Vietnamese
+7. Responsive design (mobile + desktop)
+
+FEATURES:
+- Drag & drop zone with hover effects
+- File validation (show error for invalid types)
+- Upload progress indicator
+- Poll /api/status every 1 second during processing
+- Display current step and time estimate
+- Download links appear when completed
+- Reset button to process another file
+- Show file info (name, size)
+
+UI COMPONENTS:
+- Header with app title "🎤 Voicemeet_sum"
+- Upload area with icon
+- Process button (disabled until file selected)
+- Progress bar container (hidden initially)
+- 3-step progress indicator with icons:
+  * 📝 Preprocessing
+  * 🎤 Transcription  
+  * 📋 Summarization
+- Status message area
+- Results section with download buttons
+- Error notification (toast or modal)
+
+STYLING:
+- Clean, modern CSS (no frameworks needed)
+- Smooth animations and transitions
+- Card-based layout with shadows
+- Rounded corners (border-radius: 15px)
+- Hover effects on interactive elements
+- Mobile-responsive breakpoints
+
+API INTEGRATION:
+- POST http://127.0.0.1:8000/api/upload (FormData with file)
+- GET http://127.0.0.1:8000/api/status/{job_id} (poll every 1s)
+- GET http://127.0.0.1:8000/api/download/{job_id}/transcript
+- GET http://127.0.0.1:8000/api/download/{job_id}/summary
+
+Pure HTML/CSS/JavaScript only - no external libraries or frameworks.
+All text in Vietnamese for UI labels.
+
+Prompt 3: Create Batch File Launcher
+Create a Windows batch file to launch the FastAPI backend easily.
+
+CREATE FILE: DEPLOYMENT/run_fastapi.bat
+
+REQUIREMENTS:
+1. Check if venv exists
+2. Activate virtual environment
+3. Check if Ollama is running (curl localhost:11434)
+4. Auto-start Ollama if not running
+5. Create temp/ directory if needed
+6. Launch FastAPI backend on port 8000
+7. Display clear instructions to user
+8. Handle errors gracefully
+
+STEPS:
+1. cd to project root
+2. Check venv exists, if not show error and exit
+3. Activate venv\Scripts\activate.bat
+4. Check Ollama with curl
+5. If Ollama not running: start /B ollama serve
+6. Create temp\ directory: if not exist temp mkdir temp
+7. Echo startup messages with box drawing
+8. python app\backend.py
+9. On exit, show message
+
+DISPLAY:
+╔════════════════════════════════════════════════╗
+║   🎤 Voicemeet_sum - FastAPI Backend          ║
+╚════════════════════════════════════════════════╝
+
+[INFO] Backend starting on port 8000
+[INFO] Open app\static\index.html in browser
+[INFO] Or visit: http://127.0.0.1:8000
+
+Include proper error messages in Vietnamese.
+Use chcp 65001 for UTF-8 encoding.
+
+Prompt 4: Update Requirements File
+Create a new requirements file for the FastAPI backend.
+
+CREATE FILE: requirements_fastapi.txt
+
+DEPENDENCIES:
+# FastAPI Backend
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# Existing dependencies (keep these)
+faster-whisper>=0.10.0
+ollama>=0.1.0
+torch>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+colorama>=0.4.6
+tqdm>=4.65.0
+
+# Optional but recommended
+aiofiles>=23.2.1  # For async file operations
+
+IMPORTANT NOTES:
+- Remove gradio (no longer needed)
+- Keep all src/ dependencies intact
+- PyTorch should be installed from CUDA URL separately:
+  pip install torch==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+
+Add comments explaining each section.
+
+Prompt 5: Add Health Check Endpoint
+Add a comprehensive health check endpoint to the FastAPI backend.
+
+MODIFY FILE: app/backend.py
+
+ADD ENDPOINT: GET /api/health
+try:
+    import torch
+    torch_version = torch.__version__
+    cuda_version = torch.version.cuda
+    gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+
+    if gpu_name:
+        recommended_cuda = "cu121" if "RTX 40" in gpu_name else "cu118"
+        recommended_cmd = f"pip install torch=={torch_version}+{recommended_cuda} --index-url https://download.pytorch.org/whl/{recommended_cuda}"
+        status = "ok" if cuda_version and recommended_cuda in cuda_version else "mismatch"
+    else:
+        status = "cpu_only"
+        recommended_cmd = "pip install torch==2.1.0+cpu"
+
+    checks["torch_cuda"] = {
+        "status": status,
+        "torch_version": torch_version,
+        "cuda_version": cuda_version,
+        "gpu_name": gpu_name,
+        "recommendation": recommended_cmd,
+    }
+except ImportError:
+    checks["torch_cuda"] = {
+        "status": "missing",
+        "message": "Chưa cài torch. Vui lòng cài torch phù hợp GPU.",
+        "recommendation": "pip install torch==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118"
+    }
+
+
+CHECKS:
+1. Python version
+2. FFmpeg availability (subprocess call)
+3. Ollama status (request to localhost:11434)
+4. CUDA/GPU availability (import torch, check torch.cuda.is_available())
+5. Disk space in output/ directory
+6. Whisper model existence
+7. Qwen model in Ollama
+
+RESPONSE FORMAT:
+{
+  "status": "healthy" | "degraded" | "unhealthy",
+  "checks": {
+    "python": {"status": "ok", "version": "3.11.5"},
+    "ffmpeg": {"status": "ok", "version": "6.0"},
+    "ollama": {"status": "ok", "url": "http://localhost:11434"},
+    "cuda": {"status": "ok", "device": "NVIDIA RTX 4070"},
+    "whisper_model": {"status": "ok", "model": "medium"},
+    "qwen_model": {"status": "ok", "model": "qwen2.5:7b"},
+    "disk_space": {"status": "ok", "free_gb": 150.5}
+  },
+  "timestamp": "2025-01-10T12:34:56"
+}
+
+ERROR HANDLING:
+- If Ollama not running: suggest "ollama serve"
+- If FFmpeg missing: suggest installation link
+- If CUDA not available: note "Using CPU mode"
+- If disk space < 10GB: warning
+
+Use existing utility functions from src/utils/system_checker.py
+Add logging for each check
+Return appropriate HTTP status codes (200, 503)
+

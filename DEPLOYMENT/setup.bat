@@ -43,17 +43,20 @@ echo ✅ pip đã được cập nhật
 
 REM Install dependencies
 echo [4/6] Cài đặt thư viện Python...
-pip install -r requirements.txt --quiet
+pip install -r requirements_fastapi.txt --quiet
 if errorlevel 1 (
     echo ❌ Không thể cài đặt dependencies
     pause
     exit /b 1
 )
 echo ✅ Dependencies đã được cài đặt
-echo [5/7] Kiểm tra GPU...
+
+REM Check GPU
+echo [5/6] Kiểm tra GPU...
 python -c "import torch; print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'Không có')"
+
 REM Check FFmpeg
-echo [5/6] Kiểm tra FFmpeg...
+echo [6/6] Kiểm tra FFmpeg...
 ffmpeg -version > nul 2>&1
 if errorlevel 1 (
     echo ⚠️  FFmpeg chưa được cài đặt
@@ -63,7 +66,8 @@ if errorlevel 1 (
 )
 
 REM System check
-echo [6/6] Kiểm tra hệ thống...
+echo.
+echo [7/7] Kiểm tra hệ thống...
 python DEPLOYMENT\check_system.py
 
 echo.
@@ -74,7 +78,6 @@ echo.
 echo Tiếp theo:
 echo  1. Cài đặt Ollama từ https://ollama.ai/
 echo  2. Chạy: ollama pull qwen2.5:7b
-echo  3. Chạy: DEPLOYMENT\run_app.bat
+echo  3. Chạy: DEPLOYMENT\run_fastapi.bat
 echo.
 pause
-

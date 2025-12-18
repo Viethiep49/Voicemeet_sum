@@ -84,7 +84,36 @@ class QwenService:
             progress_callback(100, "Completed!")
         
         return final_summary
-    
+
+    def extract_json(self, prompt: str) -> str:
+        """
+        Extract structured JSON from transcript using LLM
+
+        Args:
+            prompt: Formatted extraction prompt with schema
+
+        Returns:
+            Raw JSON string response from LLM
+        """
+        logger.info("Starting JSON extraction")
+        start_time = time.time()
+
+        # Check if Ollama is available
+        if not self._check_ollama():
+            logger.error("Ollama is not running")
+            raise RuntimeError("Ollama not running. Please start: ollama serve")
+
+        # Check if model is available
+        self._ensure_model_exists()
+
+        # Call Ollama with JSON-optimized parameters
+        response = self._call_ollama_json(prompt)
+
+        extract_time = time.time() - start_time
+        logger.info(f"JSON extraction completed in {extract_time:.2f}s")
+
+        return response
+
     def _summarize_complete(self, text: str) -> str:
         """
         Summarize complete transcript
@@ -156,15 +185,15 @@ Chỉ trả về nội dung tóm tắt, không giải thích thêm."""
     def _call_ollama(self, prompt: str) -> str:
         """
         Call Ollama API
-        
+
         Args:
             prompt: Input prompt
-            
+
         Returns:
             Model response
         """
         url = f"{self.base_url}/api/generate"
-        
+
         payload = {
             "model": self.config.model,
             "prompt": prompt,
@@ -174,17 +203,52 @@ Chỉ trả về nội dung tóm tắt, không giải thích thêm."""
                 "num_predict": self.config.max_tokens
             }
         }
-        
+
         try:
             response = requests.post(url, json=payload, timeout=300)
             response.raise_for_status()
-            
+
             result = response.json()
             return result.get("response", "").strip()
-            
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Ollama API error: {e}")
             raise RuntimeError(f"Ollama API error: {e}")
+
+    def _call_ollama_json(self, prompt: str) -> str:
+        """
+        Call Ollama API with JSON-optimized parameters
+
+        Args:
+            prompt: Input prompt for JSON extraction
+
+        Returns:
+            Raw JSON string response
+        """
+        url = f"{self.base_url}/api/generate"
+
+        payload = {
+            "model": self.config.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.1,  # Lower temperature for more deterministic JSON output
+                "num_predict": 4000,  # Longer context for structured data
+                "top_p": 0.9
+            },
+            "format": "json"  # Request JSON format output from Ollama
+        }
+
+        try:
+            response = requests.post(url, json=payload, timeout=300)
+            response.raise_for_status()
+
+            result = response.json()
+            return result.get("response", "").strip()
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ollama JSON API error: {e}")
+            raise RuntimeError(f"Ollama JSON API error: {e}")
     
     def _check_ollama(self) -> bool:
         """

@@ -47,6 +47,28 @@ models/
 temp/
 tmp/
 
+# Generated files (Phase 2 - DOCX export)
+*.docx
+*.pdf
+
+# Claude Code
+.claude/todos/
+.claude/settings.local.json
+.claude/.session-*
+
+# Demo/test files (large audio files)
+demo/
+test_audio/
+*.m4a
+*.mp3
+*.mp4
+*.wav
+*.flac
+
+# Keep structure files
+!demo/.gitkeep
+!test_audio/.gitkeep
+
 # FFmpeg temp files
 *.wav.tmp
 preprocessed_*.wav

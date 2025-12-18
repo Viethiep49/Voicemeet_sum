@@ -1,0 +1,71 @@
+# Docker ignore file - exclude these from Docker build context
+# This speeds up Docker builds significantly
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Output files
+output/
+logs/
+temp/
+tmp/
+
+# Models (downloaded at runtime)
+models/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in container)
+*.md
+!DEPLOYMENT.md
+docs/
+
+# Test files
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Claude Code
+.claude/
+
+# Large files
+*.m4a
+*.mp3
+*.mp4
+*.wav
+*.flac
+*.docx
+*.pdf
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Environment files
+.env
+.env.local

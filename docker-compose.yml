@@ -1,0 +1,92 @@
+# ============================================
+# Voicemeet_sum - Docker Compose Setup
+# ============================================
+# Easy deployment with Ollama + FastAPI
+# Usage: docker-compose up
+# ============================================
+
+version: '3.8'
+
+services:
+  # Ollama service (LLM runtime)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: voicemeet_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - voicemeet_network
+
+  # Voicemeet FastAPI application
+  voicemeet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voicemeet_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist output files
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./temp:/app/temp
+      # Mount models cache (optional, for faster startup)
+      - whisper_models:/app/models
+    environment:
+      # Ollama configuration
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # App configuration
+      - LOG_LEVEL=INFO
+      - MAX_UPLOAD_SIZE=2147483648  # 2GB
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - voicemeet_network
+
+  # Model initializer (downloads Qwen model on first run)
+  model_init:
+    image: ollama/ollama:latest
+    container_name: voicemeet_model_init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Checking Qwen model...' &&
+        ollama pull qwen2.5:3b &&
+        echo 'Model ready!'
+      "
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    networks:
+      - voicemeet_network
+    restart: "no"
+
+volumes:
+  # Ollama models storage
+  ollama_data:
+    driver: local
+  # Whisper models cache
+  whisper_models:
+    driver: local
+
+networks:
+  voicemeet_network:
+    driver: bridge

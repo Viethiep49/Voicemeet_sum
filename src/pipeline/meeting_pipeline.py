@@ -8,6 +8,8 @@ from datetime import datetime
 from ..transcription.audio_processor import AudioProcessor
 from ..transcription.whisper_service import WhisperService
 from ..summarization.qwen_service import QwenService
+from ..summarization.extractor import MeetingExtractor
+from ..export.docx_exporter import MeetingDocxExporter
 from ..utils.logger import logger
 from ..utils.file_handler import (
     ensure_dir, save_text_file, generate_output_filename,
@@ -25,23 +27,25 @@ class MeetingPipeline:
         self.audio_processor = AudioProcessor()
         self.whisper_service = WhisperService()
         self.qwen_service = QwenService()
+        self.extractor = MeetingExtractor(self.qwen_service)
+        self.docx_exporter = MeetingDocxExporter()
         
     def process(
         self,
         audio_file: Path,
         progress_callback: Optional[Callable[[float, str], None]] = None,
         remove_temp: bool = True
-    ) -> Tuple[Path, Path]:
+    ) -> Tuple[Path, Path, Path]:
         """
-        Process audio file: preprocess, transcribe, summarize
-        
+        Process audio file: preprocess, transcribe, summarize, extract, export
+
         Args:
             audio_file: Input audio file path
             progress_callback: Callback function(progress: float, status: str)
             remove_temp: Whether to remove temporary files
-            
+
         Returns:
-            Tuple of (transcript_path, summary_path)
+            Tuple of (transcript_path, summary_path, docx_path)
         """
         logger.info(f"Starting pipeline: {audio_file.name}")
         start_time = datetime.now()
@@ -84,16 +88,37 @@ class MeetingPipeline:
                 progress_callback(80, "Generating summary...")
             
             # Step 3: Summarize
-            logger.info("Step 3/3: Summarizing")
+            logger.info("Step 3/5: Summarizing")
             summary = self.qwen_service.summarize(
                 transcript,
                 progress_callback=progress_callback
             )
-            
+
+            # Step 4: Extract structured data
+            if progress_callback:
+                progress_callback(85, "Extracting meeting information...")
+
+            logger.info("Step 4/5: Extracting structured data")
+            extracted_data = self.extractor.extract(
+                transcript,
+                progress_callback=progress_callback
+            )
+
+            # Step 5: Generate DOCX
+            if progress_callback:
+                progress_callback(95, "Generating DOCX report...")
+
+            logger.info("Step 5/5: Generating DOCX report")
+
             # Save outputs
             logger.info("Saving outputs")
-            transcript_path, summary_path = self._save_outputs(audio_file.stem, transcript, summary)
-            
+            transcript_path, summary_path, docx_path = self._save_outputs(
+                audio_file.stem,
+                transcript,
+                summary,
+                extracted_data
+            )
+
             if progress_callback:
                 progress_callback(100, "Completed!")
             
@@ -107,8 +132,8 @@ class MeetingPipeline:
             # Log completion
             duration = (datetime.now() - start_time).total_seconds()
             logger.info(f"Pipeline completed in {duration:.2f}s")
-            
-            return transcript_path, summary_path
+
+            return transcript_path, summary_path, docx_path
             
         except KeyboardInterrupt:
             logger.warning("Pipeline interrupted by user")
@@ -130,37 +155,49 @@ class MeetingPipeline:
         self,
         base_name: str,
         transcript: str,
-        summary: str
-    ) -> Tuple[Path, Path]:
+        summary: str,
+        extracted_data: dict
+    ) -> Tuple[Path, Path, Path]:
         """
-        Save transcript and summary to files
-        
+        Save transcript, summary, and DOCX to files
+
         Args:
             base_name: Base filename
             transcript: Transcript text
             summary: Summary text
-            
+            extracted_data: Structured meeting data
+
         Returns:
-            Tuple of (transcript_path, summary_path)
+            Tuple of (transcript_path, summary_path, docx_path)
         """
         ensure_dir(APP.output_dir)
-        
+
         # Generate filenames
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         transcript_file = APP.output_dir / f"transcript_{base_name}_{timestamp}.txt"
         summary_file = APP.output_dir / f"summary_{base_name}_{timestamp}.txt"
-        
+        docx_file = APP.output_dir / f"meeting_{base_name}_{timestamp}.docx"
+
         # Add metadata to transcript
         full_transcript = self._format_transcript(transcript)
-        
-        # Save files
+
+        # Save text files
         save_text_file(full_transcript, transcript_file)
         save_text_file(summary, summary_file)
-        
+
+        # Generate DOCX
+        self.docx_exporter.export(
+            extracted_data=extracted_data,
+            transcript=transcript,
+            output_path=str(docx_file),
+            include_transcript=True
+        )
+
         logger.info(f"Transcript saved: {transcript_file.name}")
         logger.info(f"Summary saved: {summary_file.name}")
-        
-        return transcript_file, summary_file
+        logger.info(f"DOCX report saved: {docx_file.name}")
+
+        return transcript_file, summary_file, docx_file
     
     def _format_transcript(self, text: str) -> str:
         """

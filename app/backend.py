@@ -71,17 +71,18 @@ def process_job(job_id: str, audio_path: Path):
                 logger.info(f"Job {job_id}: {progress:.1f}% - {status}")
         
         # Process
-        transcript_path, summary_path = pipeline.process(
+        transcript_path, summary_path, docx_path = pipeline.process(
             audio_file=audio_path,
             progress_callback=progress_callback
         )
-        
+
         # Update job
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["progress"] = 100
         jobs[job_id]["message"] = "Hoàn thành!"
         jobs[job_id]["transcript"] = str(transcript_path)
         jobs[job_id]["summary"] = str(summary_path)
+        jobs[job_id]["docx"] = str(docx_path)
         jobs[job_id]["completed_at"] = time.time()
         
         logger.info(f"Job {job_id} completed successfully")
@@ -196,26 +197,40 @@ async def get_status(job_id: str):
 
 @app.get("/api/download/{job_id}/{file_type}")
 async def download_file(job_id: str, file_type: str):
-    """Download transcript hoặc summary"""
+    """Download transcript, summary, hoặc docx"""
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Không tìm thấy job")
-    
+
     job = jobs[job_id]
-    
+
     if job["status"] != "completed":
         raise HTTPException(status_code=400, detail="Job chưa hoàn thành")
-    
+
     if file_type == "transcript":
         file_path = job.get("transcript")
     elif file_type == "summary":
         file_path = job.get("summary")
+    elif file_type == "docx":
+        file_path = job.get("docx")
     else:
-        raise HTTPException(status_code=400, detail="Loại file không hợp lệ. Chỉ hỗ trợ: transcript, summary")
-    
+        raise HTTPException(
+            status_code=400,
+            detail="Loại file không hợp lệ. Chỉ hỗ trợ: transcript, summary, docx"
+        )
+
     if not file_path or not Path(file_path).exists():
         raise HTTPException(status_code=404, detail="Không tìm thấy file")
-    
-    return FileResponse(file_path, filename=Path(file_path).name)
+
+    # Set appropriate media type for DOCX
+    media_type = None
+    if file_type == "docx":
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+    return FileResponse(
+        file_path,
+        filename=Path(file_path).name,
+        media_type=media_type
+    )
 
 @app.get("/api/jobs")
 async def list_jobs():

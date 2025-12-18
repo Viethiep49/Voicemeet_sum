@@ -421,9 +421,15 @@
 
         .download-buttons {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
             margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .download-buttons {
+                grid-template-columns: 1fr;
+            }
         }
 
         .download-btn {
@@ -568,6 +574,9 @@
                 <a href="#" class="download-btn" id="downloadSummary">
                     📋 Tải Tóm tắt
                 </a>
+                <a href="#" class="download-btn" id="downloadDocx">
+                    📑 Tải DOCX
+                </a>
             </div>
             <button class="reset-btn" id="resetBtn">Xử lý file khác</button>
         </div>
@@ -591,6 +600,7 @@
         const results = document.getElementById('results');
         const downloadTranscript = document.getElementById('downloadTranscript');
         const downloadSummary = document.getElementById('downloadSummary');
+        const downloadDocx = document.getElementById('downloadDocx');
         const resetBtn = document.getElementById('resetBtn');
         const step1 = document.getElementById('step1');
         const step2 = document.getElementById('step2');
@@ -773,6 +783,7 @@
             results.classList.add('show');
             downloadTranscript.href = `${API_BASE}/download/${currentJobId}/transcript`;
             downloadSummary.href = `${API_BASE}/download/${currentJobId}/summary`;
+            downloadDocx.href = `${API_BASE}/download/${currentJobId}/docx`;
         }
 
         // Reset button

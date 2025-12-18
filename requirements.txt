@@ -1,13 +1,56 @@
-# --- Core dependencies ---
-faster-whisper>=0.10.0      # Transcription engine
-ollama>=0.1.0               # Local LLM runtime (for Qwen)
-gradio>=4.0.0               # GUI interface
+# ============================================
+# Voicemeet_sum Dependencies (Gradio GUI)
+# ============================================
+# File: requirements.txt
+# Mô tả: Dependencies cho version Gradio GUI
+# ============================================
+
+# --- Core AI/ML Dependencies ---
+faster-whisper>=0.10.0      # Transcription engine (CTranslate2-based Whisper)
+ollama>=0.1.0               # Local LLM runtime (for Qwen summarization)
+torch>=2.0.0                # PyTorch (for CUDA GPU support)
+numpy>=1.24.0               # Required by whisper and ML libraries
+
+# --- GUI ---
+gradio>=4.0.0               # Web-based GUI interface
+
+# --- Document Export ---
+python-docx>=0.8.11         # DOCX export for enterprise meeting minutes
+
+# --- Audio Processing ---
+ffmpeg-python>=0.2.0        # Optional wrapper for FFmpeg audio processing
 
 # --- Utilities ---
 python-dotenv>=1.0.0        # Environment variable management
-colorama>=0.4.6             # Colored terminal output
-ffmpeg-python>=0.2.0        # Optional wrapper for audio processing
-tqdm>=4.65.0                # Progress bars for pipelines
-numpy>=1.24.0               # Required by whisper
-requests>=2.31.0            # For API calls
-torch>=2.0.0                # PyTorch (for CUDA support)
+colorama>=0.4.6             # Colored terminal output for logging
+tqdm>=4.65.0                # Progress bars for processing pipelines
+requests>=2.31.0            # HTTP requests (Ollama API calls)
+psutil>=5.9.0               # System monitoring (REQUIRED for auto-config detection)
+
+# ============================================
+# OPTIONAL DEPENDENCIES (Future Features)
+# ============================================
+# pyannote-audio>=3.1.0     # Speaker diarization (Phase 2 feature)
+#                            # Requires: pip install pyannote.audio
+
+# ============================================
+# INSTALLATION NOTES:
+# ============================================
+# 1. PyTorch với CUDA nên cài riêng (recommended):
+#    - For RTX 30/40 series (CUDA 12.1):
+#      pip install torch==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121
+#    - For RTX 20 series (CUDA 11.8):
+#      pip install torch==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+#
+# 2. FFmpeg binary phải được cài đặt riêng:
+#    - Windows: Download từ https://ffmpeg.org/ và thêm vào PATH
+#    - macOS: brew install ffmpeg
+#    - Linux: sudo apt install ffmpeg
+#
+# 3. Ollama phải được cài đặt riêng:
+#    - Download từ https://ollama.ai/
+#    - Sau đó: ollama pull qwen2.5:7b
+#
+# 4. Cài đặt dependencies:
+#    pip install -r requirements.txt
+# ============================================

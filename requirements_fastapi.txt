@@ -1,37 +1,108 @@
 # ============================================
-# FastAPI Backend Dependencies
+# Voicemeet_sum - FastAPI Backend Dependencies
 # ============================================
 # File: requirements_fastapi.txt
-# Mô tả: Dependencies cho FastAPI backend thay thế Gradio GUI
+# Mô tả: Dependencies cho FastAPI backend (Production-ready)
+# Dùng cho: IT GOTTALENT Competition & Production Deployment
 # ============================================
 
 # --- FastAPI Backend Core ---
-fastapi>=0.104.0              # Modern web framework for building APIs
-uvicorn[standard]>=0.24.0    # ASGI server with standard extras (for production)
-python-multipart>=0.0.6      # Required for file uploads in FastAPI
+fastapi>=0.104.0              # Modern async web framework for building APIs
+uvicorn[standard]>=0.24.0     # ASGI server with standard extras (WebSockets, SSL)
+python-multipart>=0.0.6       # Required for file uploads in FastAPI
 
-# --- Existing Core Dependencies (keep these) ---
-faster-whisper>=0.10.0       # Transcription engine (faster implementation of Whisper)
-ollama>=0.1.0                # Local LLM runtime (for Qwen summarization)
-torch>=2.0.0                 # PyTorch (for CUDA support)
-numpy>=1.24.0                # Required by whisper and other ML libraries
-requests>=2.31.0             # For HTTP requests (Ollama API, health checks)
-python-dotenv>=1.0.0         # Environment variable management
-colorama>=0.4.6              # Colored terminal output
-tqdm>=4.65.0                 # Progress bars for pipelines
+# --- Core AI/ML Dependencies ---
+faster-whisper>=0.10.0        # Speech-to-Text engine (CTranslate2-based, 4-8x faster)
+ollama>=0.1.0                 # Local LLM runtime (for Qwen 2.5 summarization)
+torch>=2.0.0                  # PyTorch (CUDA GPU acceleration support)
+numpy>=1.24.0                 # Required by Whisper and ML libraries
 
-# --- Optional but Recommended ---
-aiofiles>=23.2.1             # For async file operations (better performance)
+# --- Document Export (NEW - for IT GOTTALENT) ---
+python-docx>=0.8.11           # Generate enterprise-grade meeting minutes (DOCX format)
+                              # Required for Phase 2: DOCX Export feature
+
+# --- HTTP & API ---
+requests>=2.31.0              # HTTP client (Ollama API calls, health checks)
+aiofiles>=23.2.1              # Async file I/O operations (better performance)
+
+# --- Utilities ---
+python-dotenv>=1.0.0          # Environment variable management (.env files)
+colorama>=0.4.6               # Colored terminal output for logging
+tqdm>=4.65.0                  # Progress bars for processing pipelines
+pydantic>=2.0.0               # Data validation (FastAPI uses this, explicit version)
+psutil>=5.9.0                 # System monitoring (REQUIRED for auto-config detection)
 
 # ============================================
-# IMPORTANT NOTES:
+# OPTIONAL DEPENDENCIES (Future Features)
 # ============================================
-# 1. Gradio đã được loại bỏ (không còn cần thiết)
-# 2. PyTorch với CUDA nên cài riêng:
-#    pip install torch==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
-#    Hoặc cho RTX 40 series:
-#    pip install torch==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu121
-# 3. Tất cả dependencies từ src/ được giữ nguyên
-# 4. Cài đặt: pip install -r requirements_fastapi.txt
+# --- Speaker Diarization (Phase 2 - Optional) ---
+# pyannote-audio>=3.1.0       # AI-powered speaker diarization
+# speechbrain>=0.5.16         # Required by pyannote
+# onnxruntime>=1.16.0         # Faster inference for diarization
+#
+# Installation:
+#   pip install pyannote.audio
+#   Requires HuggingFace token for model download
+
+# --- Database (Phase 3 - Production) ---
+# sqlalchemy>=2.0.0           # ORM for database operations
+# psycopg2-binary>=2.9.0      # PostgreSQL driver
+# alembic>=1.12.0             # Database migrations
+
+# --- Authentication (Phase 3 - Production) ---
+# python-jose[cryptography]>=3.3.0  # JWT token handling
+# passlib[bcrypt]>=1.7.4            # Password hashing
+# python-multipart>=0.0.6           # Already included above
+
+# --- Monitoring & Logging (Phase 3 - Production) ---
+# prometheus-fastapi-instrumentator>=6.1.0  # Metrics export
+# sentry-sdk[fastapi]>=1.40.0               # Error tracking
+
+# ============================================
+# INSTALLATION INSTRUCTIONS
+# ============================================
+#
+# 1. Install Python dependencies:
+#    pip install -r requirements_fastapi.txt --break-system-packages
+#    (hoặc trong virtual environment: pip install -r requirements_fastapi.txt)
+#
+# 2. Install PyTorch with CUDA (IMPORTANT - Do this AFTER step 1):
+#    - For RTX 30/40 series (CUDA 12.1 - Recommended):
+#      pip install torch==2.1.0+cu121 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+#    - For RTX 20 series (CUDA 11.8):
+#      pip install torch==2.1.0+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#
+#    - For CPU only (not recommended, very slow):
+#      pip install torch==2.1.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+#
+# 3. Install FFmpeg binary (required for audio preprocessing):
+#    - Windows: Download from https://ffmpeg.org/ và thêm vào PATH
+#    - macOS:   brew install ffmpeg
+#    - Linux:   sudo apt install ffmpeg
+#
+# 4. Install Ollama (required for LLM summarization):
+#    - Download from https://ollama.ai/
+#    - Start Ollama: ollama serve
+#    - Pull Qwen model: ollama pull qwen2.5:7b
+#
+# 5. Verify installation:
+#    python DEPLOYMENT/check_system.py
+#
+# 6. Run FastAPI server:
+#    DEPLOYMENT/run_fastapi.bat
+#    hoặc: uvicorn app.backend:app --host 0.0.0.0 --port 8000 --reload
+#
+# ============================================
+# SYSTEM REQUIREMENTS
+# ============================================
+# OS:      Windows 10/11, macOS, Linux
+# CPU:     Intel i5 or better (i7/i9 recommended)
+# RAM:     16GB minimum, 32GB recommended
+# GPU:     NVIDIA RTX 4070 (12GB VRAM) or better
+#          - RTX 3060 (12GB) works but slower
+#          - RTX 4090 (24GB) for best performance
+# Storage: 20GB free space (for models and temp files)
+# Network: Internet required for initial model downloads
 # ============================================
 

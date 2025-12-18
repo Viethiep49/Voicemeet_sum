@@ -1,0 +1,222 @@
+# ============================================
+# Voicemeet_sum - Mac M1 Optimized Dependencies
+# ============================================
+# File: requirements_mac_m1.txt
+# Tối ưu cho: Mac M1/M2/M3 với 8GB RAM (Demo & Development)
+# Target: IT GOTTALENT Competition Demo
+# ============================================
+
+# --- FastAPI Backend Core ---
+fastapi>=0.104.0              # Modern async web framework
+uvicorn[standard]>=0.24.0     # ASGI server
+python-multipart>=0.0.6       # File uploads support
+
+# --- Core AI/ML Dependencies (Mac M1 Optimized) ---
+faster-whisper>=0.10.0        # Speech-to-Text (sẽ dùng CPU, không cần CUDA)
+ollama>=0.1.0                 # Local LLM runtime (Qwen sẽ dùng smaller model)
+numpy>=1.24.0                 # NumPy cho Mac M1 (Apple Silicon optimized)
+
+# --- PyTorch for Mac M1 (MPS Backend - Metal Performance Shaders) ---
+# IMPORTANT: Cài RIÊNG qua command line (xem Installation Instructions bên dưới)
+# torch>=2.0.0                # Sẽ tự động dùng MPS backend trên Mac M1
+
+# --- Document Export ---
+python-docx>=0.8.11           # DOCX export (enterprise meeting minutes)
+
+# --- HTTP & API ---
+requests>=2.31.0              # HTTP client
+aiofiles>=23.2.1              # Async file operations
+
+# --- Utilities ---
+python-dotenv>=1.0.0          # Environment variables
+colorama>=0.4.6               # Colored terminal output
+tqdm>=4.65.0                  # Progress bars
+pydantic>=2.0.0               # Data validation
+
+# --- Mac-specific optimizations ---
+psutil>=5.9.0                 # System monitoring (REQUIRED for auto-config detection)
+
+# ============================================
+# MAC M1 SPECIFIC NOTES
+# ============================================
+#
+# 1. RAM Limitation (8GB):
+#    - Whisper: Dùng 'small' model thay vì 'medium' (tiết kiệm ~50% RAM)
+#    - Qwen: Dùng qwen2.5:3b thay vì qwen2.5:7b (tiết kiệm ~4GB RAM)
+#    - Đóng tất cả apps khác khi demo
+#
+# 2. No NVIDIA GPU:
+#    - Faster-Whisper sẽ auto fallback to CPU (CoreML acceleration)
+#    - Processing sẽ chậm hơn (~3-5x) nhưng vẫn acceptable cho demo
+#
+# 3. Metal Performance Shaders (MPS):
+#    - PyTorch on Mac M1 dùng MPS thay vì CUDA
+#    - Faster hơn CPU nhưng chậm hơn NVIDIA GPU
+#
+# ============================================
+# INSTALLATION INSTRUCTIONS (Mac M1 8GB)
+# ============================================
+#
+# STEP 1: Create virtual environment
+#   python3 -m venv venv
+#   source venv/bin/activate
+#
+# STEP 2: Install dependencies
+#   pip install -r requirements_mac_m1.txt
+#
+# STEP 3: Install PyTorch for Mac M1 (MPS support)
+#   # Option A: Latest stable (recommended)
+#   pip3 install torch torchvision torchaudio
+#
+#   # Option B: Specific version
+#   pip3 install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0
+#
+# STEP 4: Install FFmpeg (required for audio processing)
+#   brew install ffmpeg
+#
+# STEP 5: Install Ollama (for LLM)
+#   # Download from: https://ollama.ai/download/mac
+#   # Or via Homebrew:
+#   brew install ollama
+#
+# STEP 6: Pull SMALLER Qwen model (critical for 8GB RAM!)
+#   ollama pull qwen2.5:3b
+#   # DON'T use qwen2.5:7b - it needs 10+ GB RAM!
+#
+# STEP 7: Verify installation
+#   python3 -c "import torch; print(f'PyTorch: {torch.__version__}')"
+#   python3 -c "import torch; print(f'MPS Available: {torch.backends.mps.is_available()}')"
+#   ffmpeg -version
+#   ollama list
+#
+# ============================================
+# CONFIGURATION CHANGES for Mac M1 8GB
+# ============================================
+#
+# Edit: config/settings.py
+#
+# 1. Whisper Configuration:
+#    TRANSCRIPTION.model = "small"           # Was: "medium"
+#    TRANSCRIPTION.device = "cpu"            # Mac M1: use CPU
+#    TRANSCRIPTION.compute_type = "int8"     # Was: "float16" (save memory)
+#    TRANSCRIPTION.num_workers = 4           # Mac M1 has 8 cores, use 4
+#
+# 2. Qwen Configuration:
+#    SUMMARIZATION.model = "qwen2.5:3b"      # Was: "qwen2.5:7b"
+#    SUMMARIZATION.max_tokens = 2048         # Was: 4096 (reduce if needed)
+#
+# 3. Memory Management:
+#    APP.max_file_size = 50 * 1024 * 1024   # 50MB max (was 2GB)
+#    APP.chunk_size = 8192                   # Smaller chunks
+#
+# ============================================
+# EXPECTED PERFORMANCE (Mac M1 8GB)
+# ============================================
+#
+# Test file: 30-minute audio (Zoom recording)
+#
+# Processing breakdown:
+# - FFmpeg preprocessing:    10-20 sec
+# - Whisper transcription:   8-12 min (small model, CPU)
+# - Qwen summarization:      2-4 min (3B model)
+# ────────────────────────────────────────────
+# Total:                     11-16 min
+# Speed ratio:               ~2-3x realtime
+#
+# RAM Usage:
+# - System baseline:         2-3 GB
+# - Whisper (small):         1-2 GB
+# - Qwen (3b):              3-4 GB
+# - FastAPI + overhead:     0.5-1 GB
+# ────────────────────────────────────────────
+# Total:                    6.5-10 GB peak
+# Status:                   WORKABLE (close to limit)
+#
+# ⚠️  IMPORTANT:
+# - Đóng Chrome, Slack, và apps khác trước khi demo
+# - Monitor RAM với Activity Monitor
+# - Nếu swap quá nhiều → giảm chunk_size hoặc dùng whisper "tiny"
+#
+# ============================================
+# DEMO OPTIMIZATION TIPS
+# ============================================
+#
+# 1. Pre-load models trước demo:
+#    - Start Ollama: ollama serve
+#    - Warm-up: ollama run qwen2.5:3b "hello"
+#    - Pre-cache Whisper: chạy 1 file test trước
+#
+# 2. Prepare demo files:
+#    - Dùng file 5-10 phút thay vì 2 giờ
+#    - Pre-process và save results như backup
+#    - Có sẵn output files nếu live demo fail
+#
+# 3. System optimization:
+#    - Close all browsers
+#    - Quit Slack, Discord, etc.
+#    - Disable Spotlight indexing temporarily
+#    - Free up swap: sudo purge
+#
+# 4. Network:
+#    - Ollama chạy local (không cần internet)
+#    - FastAPI localhost only (không cần deploy)
+#
+# ============================================
+# TROUBLESHOOTING (Mac M1)
+# ============================================
+#
+# Problem: "RuntimeError: MPS backend not available"
+# Solution: MPS requires macOS 12.3+
+#   - Upgrade macOS nếu có thể
+#   - Hoặc dùng CPU: TRANSCRIPTION.device = "cpu"
+#
+# Problem: "Killed: 9" (Out of Memory)
+# Solution:
+#   - Giảm model size: whisper "tiny" hoặc "base"
+#   - Giảm Qwen: qwen2.5:1.5b (nếu có)
+#   - Tăng swap: sudo sysctl vm.swapusage
+#
+# Problem: FFmpeg not found
+# Solution:
+#   brew install ffmpeg
+#   # Verify: which ffmpeg
+#
+# Problem: Ollama không start
+# Solution:
+#   # Check if running:
+#   ps aux | grep ollama
+#   # Start manually:
+#   ollama serve &
+#   # Check port:
+#   curl http://localhost:11434
+#
+# Problem: Transcription quá chậm
+# Solution:
+#   - Whisper "small" thay vì "medium": 2x faster
+#   - Whisper "tiny": 4x faster (but lower accuracy)
+#   - Enable CoreML acceleration (experimental):
+#     pip install ane-transformers  # Apple Neural Engine
+#
+# ============================================
+# ALTERNATIVE: Cloud Demo (nếu Mac M1 quá chậm)
+# ============================================
+#
+# Nếu Mac M1 8GB không đủ mạnh cho demo smooth:
+#
+# Option 1: Pre-record demo video
+#   - Process files trước
+#   - Record screen + voiceover
+#   - Play video during presentation
+#
+# Option 2: Deploy to cloud temporarily
+#   - Render.com: Free tier with 4GB RAM
+#   - Railway.app: $5 credit, GPU instances
+#   - Google Colab: Free GPU (T4)
+#   - Demo qua URL instead of localhost
+#
+# Option 3: Borrow Windows machine với GPU
+#   - Friend's gaming laptop
+#   - University lab computer
+#   - Render smooth demo
+#
+# ============================================

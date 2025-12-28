@@ -79,10 +79,9 @@ class QwenService:
         
         summarize_time = time.time() - start_time
         logger.info(f"Summarization completed in {summarize_time:.2f}s")
-        
-        if progress_callback:
-            progress_callback(100, "Completed!")
-        
+
+        # NOTE: Don't call 100% here - pipeline still has extract + DOCX steps
+
         return final_summary
 
     def extract_json(self, prompt: str) -> str:

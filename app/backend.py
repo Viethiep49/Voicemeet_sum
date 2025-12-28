@@ -86,7 +86,8 @@ def process_job(job_id: str, audio_path: Path):
         jobs[job_id]["completed_at"] = time.time()
         
         logger.info(f"Job {job_id} completed successfully")
-        
+        logger.info(f"Job {job_id} - process_job function ending...")
+
         # Cleanup temp file
         try:
             if audio_path.exists():
@@ -94,6 +95,8 @@ def process_job(job_id: str, audio_path: Path):
                 logger.info(f"Cleaned up temp file: {audio_path}")
         except Exception as e:
             logger.warning(f"Failed to cleanup temp file: {e}")
+
+        logger.info(f"Job {job_id} - process_job function DONE")
         
     except Exception as e:
         logger.error(f"Job {job_id} failed: {e}", exc_info=True)
@@ -164,8 +167,15 @@ async def upload_audio(file: UploadFile = File(...)):
             "created_at": time.time()
         }
         
-        # Start background processing using asyncio
-        asyncio.create_task(asyncio.to_thread(process_job, job_id, audio_path))
+        # Start background processing with exception handling
+        async def safe_process():
+            try:
+                await asyncio.to_thread(process_job, job_id, audio_path)
+                logger.info(f"Background task for {job_id} finished successfully")
+            except Exception as e:
+                logger.error(f"Background task {job_id} exception: {e}", exc_info=True)
+
+        asyncio.create_task(safe_process())
         
         logger.info(f"Job {job_id} created for file: {file.filename} ({format_file_size(file_size)})")
         

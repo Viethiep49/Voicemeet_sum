@@ -88,4 +88,6 @@ htmlcov/
 # Environment
 .env
 .env.local
+# Windows reserved files
+nul
 

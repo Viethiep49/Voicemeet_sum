@@ -43,11 +43,8 @@ SYSTEM_INFO = detect_system()
 class TranscriptionConfig:
     """Faster-Whisper configuration (auto-optimized per platform)"""
 
-    # Model selection based on RAM
-    model: str = field(default_factory=lambda:
-        "small" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"]
-        else "medium"
-    )
+    # Model selection - small for faster speed
+    model: str = "tiny"
 
     # Device selection: Mac M1 uses CPU, Windows/Linux use CUDA if available
     device: str = field(default_factory=lambda:

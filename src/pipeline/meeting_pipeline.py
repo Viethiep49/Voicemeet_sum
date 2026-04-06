@@ -145,11 +145,13 @@ class MeetingPipeline:
             logger.error(f"Pipeline failed: {e}", exc_info=True)
             raise
         finally:
+            # TEMPORARILY DISABLED - Testing if this causes crash with small model
             # Always unload Whisper model to free memory
-            try:
-                self.whisper_service.unload_model()
-            except Exception as e:
-                logger.warning(f"Error unloading model: {e}")
+            # try:
+            #     self.whisper_service.unload_model()
+            # except Exception as e:
+            #     logger.warning(f"Error unloading model: {e}")
+            pass
     
     def _save_outputs(
         self,

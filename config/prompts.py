@@ -1,5 +1,5 @@
 """
-Prompt templates for LLM (Qwen) interactions
+Prompt templates for LLM interactions (Gemma 4 / Qwen - bilingual Việt-Nhật)
 File: config/prompts.py
 """
 import json
@@ -7,8 +7,9 @@ import json
 # ============================================
 # CHUNK SUMMARIZATION PROMPT
 # ============================================
-CHUNK_SUMMARIZE_PROMPT = """Tóm tắt ngắn gọn đoạn cuộc họp sau bằng tiếng Việt.
+CHUNK_SUMMARIZE_PROMPT = """Tóm tắt ngắn gọn đoạn cuộc họp song ngữ Việt-Nhật sau bằng tiếng Việt.
 Giữ lại các thông tin quan trọng: ai nói gì, quyết định gì, việc gì cần làm.
+Thuật ngữ tiếng Nhật: giữ nguyên kèm nghĩa tiếng Việt trong ngoặc (ví dụ: 売上 - doanh thu).
 Không thêm thông tin không có trong transcript.
 
 TRANSCRIPT:
@@ -22,7 +23,7 @@ TÓM TẮT:
 # ============================================
 # JSON EXTRACTION PROMPT
 # ============================================
-EXTRACTION_PROMPT = """Bạn là trợ lý phân tích cuộc họp doanh nghiệp Việt Nam.
+EXTRACTION_PROMPT = """Bạn là trợ lý phân tích cuộc họp song ngữ Việt-Nhật (marketing F&B tại Nhật Bản).
 
 NHIỆM VỤ: Phân tích transcript và trích xuất thông tin theo JSON schema.
 
@@ -30,8 +31,9 @@ QUY TẮC BẮT BUỘC:
 1. CHỈ trả về JSON, không có text nào khác
 2. KHÔNG bịa thông tin không có trong transcript
 3. Nếu không chắc chắn, để null
-4. Giữ nguyên tên riêng tiếng Việt
-5. Tóm tắt ngắn gọn, súc tích
+4. Giữ nguyên tên riêng tiếng Việt VÀ tiếng Nhật
+5. Thuật ngữ Nhật: giữ nguyên kèm nghĩa Việt trong ngoặc (ví dụ: 売上 - doanh thu)
+6. Tóm tắt ngắn gọn, súc tích
 
 JSON SCHEMA:
 ```json

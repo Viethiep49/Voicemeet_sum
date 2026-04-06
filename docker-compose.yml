@@ -45,6 +45,8 @@ services:
     environment:
       # Ollama configuration
       - OLLAMA_BASE_URL=http://ollama:11434
+      # Model profile: 'optimized' (Gemma 4 + Whisper Turbo) or 'legacy' (Qwen 2.5 + Whisper small)
+      - MODEL_PROFILE=optimized
       # App configuration
       - LOG_LEVEL=INFO
       - MAX_UPLOAD_SIZE=2147483648  # 2GB
@@ -69,8 +71,8 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        echo 'Checking Qwen model...' &&
-        ollama pull qwen2.5:3b &&
+        echo 'Pulling Gemma 4 E4B model...' &&
+        ollama pull gemma4:e4b &&
         echo 'Model ready!'
       "
     environment:

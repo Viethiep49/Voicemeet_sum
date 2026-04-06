@@ -6,8 +6,8 @@
 # ============================================
 
 # --- Core AI/ML Dependencies ---
-faster-whisper>=0.10.0      # Transcription engine (CTranslate2-based Whisper)
-ollama>=0.1.0               # Local LLM runtime (for Qwen summarization)
+faster-whisper>=1.1.0        # Transcription engine - requires >=1.1.0 for large-v3-turbo support
+ollama>=0.1.0               # Local LLM runtime (Gemma 4 / Qwen via Ollama)
 torch>=2.0.0                # PyTorch (for CUDA GPU support)
 numpy>=1.24.0               # Required by whisper and ML libraries
 

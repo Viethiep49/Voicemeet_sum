@@ -1,5 +1,5 @@
 """
-Qwen summarization service via Ollama
+LLM summarization service via Ollama (Gemma 4 / Qwen - profile-aware)
 """
 import requests
 from typing import Optional, Callable
@@ -11,9 +11,13 @@ from ..utils.text_processor import chunk_text
 from config.settings import SUMMARIZATION
 
 
-class QwenService:
-    """Handle summarization using Qwen via Ollama"""
-    
+class LLMService:
+    """Handle summarization using LLM via Ollama.
+
+    Works with both Gemma 4 (optimized profile) and Qwen 2.5 (legacy profile).
+    Profile is determined by config/settings.py ACTIVE_PROFILE.
+    """
+
     def __init__(self, config=None):
         """
         Initialize Qwen service
@@ -157,10 +161,15 @@ class QwenService:
         return response
     
     def _build_summary_prompt(self, text: str, style: str = "complete") -> str:
-        """Build prompt for summarization"""
-        base_instruction = """Bạn là trợ lý chuyên nghiệp tóm tắt cuộc họp. Đây là cuộc họp của công ty F&B (thực phẩm) tại Nhật Bản.
+        """Build bilingual Việt-Nhật summary prompt (Gemma 4 / Qwen compatible)"""
+        base_instruction = """Bạn là trợ lý chuyên nghiệp tóm tắt cuộc họp song ngữ Việt-Nhật.
+Đây là cuộc họp marketing của công ty F&B (thực phẩm Việt Nam) tại thị trường Nhật Bản.
 
-Hãy tóm tắt theo cấu trúc sau (bằng tiếng Việt):
+QUY TẮC:
+1. Tóm tắt bằng tiếng Việt
+2. Giữ nguyên thuật ngữ tiếng Nhật quan trọng kèm nghĩa Việt trong ngoặc (ví dụ: 売上 - doanh thu)
+3. Giữ nguyên tên riêng, tên công ty, địa danh
+4. Số liệu (doanh thu, %, ngân sách) → ghi chính xác
 
 # TÓM TẮT CUỘC HỌP
 
@@ -173,12 +182,19 @@ Hãy tóm tắt theo cấu trúc sau (bằng tiếng Việt):
 ## HÀNH ĐỘNG CẦN LÀM
 [Ai làm gì, deadline khi nào - format: "- Người: Công việc (deadline)"]
 
+## THUẬT NGỮ CHUYÊN NGÀNH
+[Liệt kê thuật ngữ Nhật-Việt quan trọng xuất hiện trong cuộc họp]
+
 Chỉ trả về nội dung tóm tắt, không giải thích thêm."""
-        
+
         if style == "complete":
             return f"{base_instruction}\n\nNội dung cuộc họp:\n{text}"
         elif style == "chunk":
-            return f"Tóm tắt ngắn gọn đoạn họp sau:\n\n{text}"
+            return (
+                "Tóm tắt ngắn gọn đoạn cuộc họp song ngữ Việt-Nhật sau bằng tiếng Việt.\n"
+                "Giữ thuật ngữ tiếng Nhật kèm nghĩa Việt trong ngoặc.\n\n"
+                f"{text}"
+            )
         else:  # final
             return f"{base_instruction}\n\nCác tóm tắt phụ:\n{text}"
     
@@ -303,3 +319,6 @@ Chỉ trả về nội dung tóm tắt, không giải thích thêm."""
             logger.error(f"Failed to pull model: {e}")
             raise RuntimeError(f"Failed to pull model: {e}")
 
+
+# Backward compatibility alias — existing imports from qwen_service still work
+QwenService = LLMService

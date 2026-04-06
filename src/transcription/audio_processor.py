@@ -85,9 +85,11 @@ class AudioProcessor:
         cmd = [
             'ffmpeg',
             '-y',  # Overwrite output
+            '-threads', '0',  # Use all CPU cores
             '-i', str(input_path),
             '-ar', str(self.config.sample_rate),  # Sample rate
             '-ac', str(self.config.channels),  # Channels
+            '-acodec', 'pcm_s16le',  # Fast codec
         ]
         
         # Apply audio filters

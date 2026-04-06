@@ -131,7 +131,8 @@ class SummarizationConfig:
         else ("qwen2.5:3b" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"] else "qwen2.5:7b")
     )
 
-    temperature: float = 0.3
+    # Lower temperature = faster, more deterministic
+    temperature: float = 0.2
 
     # Gemma 4 supports longer context; keep 4000 for both profiles on GPU
     max_tokens: int = field(default_factory=lambda:
@@ -143,11 +144,13 @@ class SummarizationConfig:
 
 @dataclass
 class FFmpegConfig:
-    """FFmpeg preprocessing configuration"""
+    """FFmpeg preprocessing configuration - SPEED OPTIMIZED"""
     sample_rate: int = 16000
     channels: int = 1
-    normalize: bool = True
-    remove_silence: bool = True
+    # loudnorm disabled = 2x faster (was taking 30-60s)
+    normalize: bool = False
+    # silence removal disabled = faster
+    remove_silence: bool = False
 
 @dataclass
 class AppConfig:
@@ -243,4 +246,3 @@ def load_config_from_file(config_path: Optional[Path] = None):
 # ============================================
 if os.getenv("DEBUG_CONFIG", "").lower() == "true":
     print_config_info()
-

@@ -55,7 +55,7 @@ tmp/
 .claude/todos/
 .claude/settings.local.json
 .claude/.session-*
-
+.claude
 # Demo/test files (large audio files)
 demo/
 test_audio/

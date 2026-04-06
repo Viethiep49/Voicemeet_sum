@@ -146,6 +146,7 @@ Edit `docker-compose.yml` to customize:
 ```yaml
 environment:
   - OLLAMA_BASE_URL=http://ollama:11434
+  - MODEL_PROFILE=optimized  # 'optimized' (Gemma 4 + Whisper Turbo) or 'legacy' (Qwen 2.5 + Whisper small)
   - LOG_LEVEL=DEBUG  # Change to DEBUG for more logs
   - MAX_UPLOAD_SIZE=1073741824  # Change max file size (1GB example)
 
@@ -207,8 +208,9 @@ pip install torch==2.1.0+cu121 torchvision torchaudio --index-url https://downlo
 # 6. Start Ollama
 ollama serve
 
-# 7. Download Qwen model (in new terminal)
-ollama pull qwen2.5:7b  # Use 7b on high-RAM Windows
+# 7. Download Gemma 4 model (in new terminal)
+ollama pull gemma4:e4b  # Default optimized model
+# ollama pull qwen2.5:7b  # Or keep Qwen for legacy profile
 
 # 8. Start FastAPI server (in new terminal)
 .\venv\Scripts\activate
@@ -245,8 +247,8 @@ pip install torch==2.1.0+cu118 torchvision torchaudio --index-url https://downlo
 # 7. Start Ollama
 ollama serve &
 
-# 8. Download Qwen model
-ollama pull qwen2.5:7b
+# 8. Download Gemma 4 model
+ollama pull gemma4:e4b
 
 # 9. Start FastAPI server
 uvicorn app.backend:app --reload --host 0.0.0.0 --port 8000
@@ -309,6 +311,9 @@ ports:
 docker exec voicemeet_ollama ollama list
 
 # If not, manually pull
+docker exec voicemeet_ollama ollama pull gemma4:e4b
+
+# Rollback to legacy model
 docker exec voicemeet_ollama ollama pull qwen2.5:3b
 ```
 
@@ -371,12 +376,24 @@ pip install torch==2.1.0+cu121 --index-url https://download.pytorch.org/whl/cu12
 
 ## 📊 Performance Tuning
 
+### Switch Model Profile (Recommended)
+
+```bash
+# Rollback to lighter models (low VRAM)
+export MODEL_PROFILE=legacy
+# This uses: Whisper small + Qwen 2.5:3b
+
+# Use smallest possible (E2B edge model)
+# Edit config/settings.py: SUMMARIZATION.model = "gemma4:e2b"
+```
+
 ### For Low-RAM Systems (8GB)
 
 Edit `config/settings.py`:
 ```python
-TRANSCRIPTION.model = "tiny"  # Instead of "small"
-SUMMARIZATION.model = "qwen2.5:1.5b"  # Instead of "3b"
+# Override after profile loads
+TRANSCRIPTION.model = "small"          # Smaller than default
+SUMMARIZATION.model = "gemma4:e2b"     # Lightest Gemma 4 variant
 APP.max_file_size = 25 * 1024 * 1024  # 25MB max
 ```
 
@@ -384,8 +401,8 @@ APP.max_file_size = 25 * 1024 * 1024  # 25MB max
 
 Edit `config/settings.py`:
 ```python
-TRANSCRIPTION.model = "medium"  # Better accuracy
-SUMMARIZATION.model = "qwen2.5:7b"  # Better summaries
+TRANSCRIPTION.model = "large-v3-turbo"  # Default optimized (already set)
+SUMMARIZATION.model = "gemma4:26b"       # Better reasoning, needs ~16GB RAM
 APP.max_file_size = 2 * 1024 * 1024 * 1024  # 2GB max
 ```
 

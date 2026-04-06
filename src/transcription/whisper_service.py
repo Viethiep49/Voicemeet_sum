@@ -130,21 +130,26 @@ class WhisperService:
             segments_iter, info = self.model.transcribe(
                 str(audio_path),
                 beam_size=self.config.beam_size,
-                language=self.config.language,
+                language=self.config.language,  # None = auto-detect for bilingual meetings
                 task="transcribe",
                 vad_filter=self.config.vad_filter,
                 vad_parameters=dict(
                     threshold=0.5,
                     min_speech_duration_ms=250,
-                    min_silence_duration_ms=2000,
+                    min_silence_duration_ms=1500,  # Reduced for fast-paced marketing dialogue
                     speech_pad_ms=400
                 ),
                 initial_prompt=self.config.initial_prompt,
                 word_timestamps=False,
                 condition_on_previous_text=True
             )
-            
-            logger.info(f"Language: {info.language} ({info.language_probability:.2f})")
+
+            detected_lang = info.language
+            lang_prob = info.language_probability
+            if self.config.language is None:
+                logger.info(f"Auto-detected language: {detected_lang} (confidence: {lang_prob:.2f})")
+            else:
+                logger.info(f"Language: {detected_lang} ({lang_prob:.2f})")
             logger.info(f"Duration: {info.duration:.2f}s")
             
             # Step 2: Convert to list immediately (safer than iterating)

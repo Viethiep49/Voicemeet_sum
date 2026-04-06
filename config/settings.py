@@ -1,10 +1,14 @@
 """
 Configuration settings for Voicemeet_sum
-Auto-detects platform and optimizes for Mac M1 8GB or Windows/Linux GPU
+Auto-detects platform and optimizes for GPU (RTX 4050) or Mac M1 8GB.
+Supports two model profiles via MODEL_PROFILE env var:
+  - optimized (default): Whisper large-v3-turbo + Gemma 4 E4B
+  - legacy: Whisper small/medium + Qwen 2.5
 """
 import os
 import platform
 import psutil
+from enum import Enum
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
@@ -36,42 +40,75 @@ def detect_system():
 SYSTEM_INFO = detect_system()
 
 # ============================================
+# Model Profile (Rollback Support)
+# ============================================
+
+class ModelProfile(Enum):
+    """Model profile selection for easy rollback"""
+    LEGACY = "legacy"       # Whisper small/medium + Qwen 2.5
+    OPTIMIZED = "optimized" # Whisper large-v3-turbo + Gemma 4
+
+# Set via env: MODEL_PROFILE=legacy python app.py
+try:
+    ACTIVE_PROFILE = ModelProfile(os.getenv("MODEL_PROFILE", "optimized"))
+except ValueError:
+    ACTIVE_PROFILE = ModelProfile.OPTIMIZED
+
+# ============================================
 # Whisper Configuration (Auto-optimized)
 # ============================================
 
 @dataclass
 class TranscriptionConfig:
-    """Faster-Whisper configuration (auto-optimized per platform)"""
+    """Faster-Whisper configuration (profile-aware).
 
-    # Model selection based on RAM
+    OPTIMIZED: large-v3-turbo on GPU float16, auto language detect
+    LEGACY   : small/medium, int8 on low RAM, hardcoded vi
+    """
+
+    # Model: large-v3-turbo (~3GB VRAM float16) for optimized, small/medium for legacy
     model: str = field(default_factory=lambda:
-        "small" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"]
-        else "medium"
+        "large-v3-turbo" if ACTIVE_PROFILE == ModelProfile.OPTIMIZED
+        else ("small" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"] else "medium")
     )
 
-    # Device selection: Mac M1 uses CPU, Windows/Linux use CUDA if available
+    # Device: Mac M1 CPU, otherwise CUDA (auto-fallback to CPU)
     device: str = field(default_factory=lambda:
         "cpu" if SYSTEM_INFO["is_mac_arm"]
-        else "cuda"  # Will auto-fallback to CPU if CUDA not available
+        else "cuda"
     )
 
-    # Compute type: int8 for low RAM, float16 for GPU
+    # Compute type: float16 on GPU (4050), int8 on Mac ARM
     compute_type: str = field(default_factory=lambda:
-        "int8" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"]
+        "int8" if SYSTEM_INFO["is_mac_arm"]
         else "float16"
     )
 
-    language: str = "vi"
+    # Language: None = auto-detect (required for Việt-Nhật code-switching)
+    language: Optional[str] = field(default_factory=lambda:
+        None if ACTIVE_PROFILE == ModelProfile.OPTIMIZED
+        else "vi"
+    )
+
     beam_size: int = 5
     vad_filter: bool = True
 
-    # Multi-language prompt (Việt + Nhật)
-    initial_prompt: str = (
-        "Cuộc họp công ty F&B bằng tiếng Việt, "
-        "có từ tiếng Nhật về thực phẩm như phở, bún, ramen (ラーメン), sushi (寿司)."
+    # Bilingual prompt for marketing F&B Việt-Nhật meetings
+    initial_prompt: str = field(default_factory=lambda:
+        (
+            "Cuộc họp marketing F&B song ngữ Việt-Nhật. "
+            "Thuật ngữ: phở, bún, bánh mì, ramen (ラーメン), sushi (寿司), "
+            "マーケティング (marketing), 売上 (doanh thu), キャンペーン (campaign), "
+            "ターゲット (target), 顧客 (khách hàng). "
+            "Tên riêng giữ nguyên. Có chuyển đổi ngôn ngữ giữa tiếng Việt và tiếng Nhật."
+        ) if ACTIVE_PROFILE == ModelProfile.OPTIMIZED
+        else (
+            "Cuộc họp công ty F&B bằng tiếng Việt, "
+            "có từ tiếng Nhật về thực phẩm như phở, bún, ramen (ラーメン), sushi (寿司)."
+        )
     )
 
-    # Mac M1 specific: reduce workers to save RAM
+    # Workers: reduce on low RAM
     num_workers: int = field(default_factory=lambda:
         2 if SYSTEM_INFO["is_low_ram"] else 4
     )
@@ -82,19 +119,24 @@ class TranscriptionConfig:
 
 @dataclass
 class SummarizationConfig:
-    """Qwen configuration (auto-optimized per platform)"""
+    """LLM summarization configuration (profile-aware).
 
-    # Model selection: 3B for low RAM, 7B for high RAM
+    OPTIMIZED: Gemma 4 E4B (~4GB VRAM, 140+ languages, native Việt-Nhật)
+    LEGACY   : Qwen 2.5 3B/7B via Ollama
+    """
+
+    # Model: Gemma 4 E4B for optimized (fits 6GB VRAM), Qwen 2.5 for legacy
     model: str = field(default_factory=lambda:
-        "qwen2.5:3b" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"]
-        else "qwen2.5:7b"
+        "gemma4:e4b" if ACTIVE_PROFILE == ModelProfile.OPTIMIZED
+        else ("qwen2.5:3b" if SYSTEM_INFO["is_low_ram"] or SYSTEM_INFO["is_mac_arm"] else "qwen2.5:7b")
     )
 
     temperature: float = 0.3
 
-    # Reduce max tokens on low RAM systems
+    # Gemma 4 supports longer context; keep 4000 for both profiles on GPU
     max_tokens: int = field(default_factory=lambda:
-        2000 if SYSTEM_INFO["is_low_ram"] else 4000
+        4000 if ACTIVE_PROFILE == ModelProfile.OPTIMIZED
+        else (2000 if SYSTEM_INFO["is_low_ram"] else 4000)
     )
 
     base_url: str = "http://localhost:11434"
@@ -173,13 +215,15 @@ def print_config_info():
     print(f"RAM:            {SYSTEM_INFO['ram_gb']:.1f} GB")
     print(f"Mac M1 Mode:    {SYSTEM_INFO['is_mac_arm']}")
     print(f"Low RAM Mode:   {SYSTEM_INFO['is_low_ram']}")
+    print(f"Model Profile:  {ACTIVE_PROFILE.value.upper()} (set MODEL_PROFILE env to change)")
     print("-"*60)
     print(f"Whisper Model:  {TRANSCRIPTION.model}")
     print(f"Whisper Device: {TRANSCRIPTION.device}")
     print(f"Compute Type:   {TRANSCRIPTION.compute_type}")
+    print(f"Language:       {TRANSCRIPTION.language or 'auto-detect'}")
     print(f"Workers:        {TRANSCRIPTION.num_workers}")
     print("-"*60)
-    print(f"Qwen Model:     {SUMMARIZATION.model}")
+    print(f"LLM Model:      {SUMMARIZATION.model}")
     print(f"Max Tokens:     {SUMMARIZATION.max_tokens}")
     print("-"*60)
     print(f"Chunk Size:     {APP.chunk_size}")
